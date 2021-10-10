@@ -97,6 +97,7 @@ cleaned_df= preprocessing(X,y,scale_feature,encode_feature,scalers, encoders)
 
 print(cleaned_df.info())
 
+#Data
 #Clustering
 #DBSCAN
 
@@ -104,15 +105,38 @@ import matplotlib.pyplot as plt
 from sklearn.cluster import DBSCAN
 from sklearn.metrics.cluster import homogeneity_score,completeness_score,v_measure_score
 
+house_location = cleaned_df[['longitude', 'latitude', 'ocean_proximity_<1H OCEAN','ocean_proximity_INLAND','ocean_proximity_ISLAND','ocean_proximity_NEAR BAY','ocean_proximity_NEAR OCEAN' ]]
+house_condition = cleaned_df[['housing_median_age', 'total_rooms', 'total_bedrooms']]
+house_around = cleaned_df[['population', 'households', 'median_income']]
+
+
 for i in range (1,10,1):
-  dbscan= DBSCAN(eps=i*0.1, min_samples=5)
-  dbscan.fit(cleaned_df)
-  labels = dbscan.labels_
-  n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
-  n_noise_ = list(labels).count(-1)
-  print('Estimated number of clusters: %d' % n_clusters_)
-  print('Estimated number of noise points: %d' % n_noise_)
-  print("Homogeneity: %0.3f" % homogeneity_score(y, labels))
-  print("Completeness: %0.3f" % completeness_score(y, labels))
-  print("V-measure: %0.3f" %v_measure_score(y, labels))
-  print("")
+    dbscan= DBSCAN(eps=i*0.1, min_samples=5)
+    dbscan.fit(house_location)
+    labels = dbscan.labels_
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    n_noise_ = list(labels).count(-1)
+    print('Estimated number of clusters: %d' % n_clusters_)
+    print('Estimated number of noise points: %d' % n_noise_)
+    print("Homogeneity: %0.3f" % homogeneity_score(y, labels))
+    print("Completeness: %0.3f" % completeness_score(y, labels))
+    print("V-measure: %0.3f" %v_measure_score(y, labels))
+    print("")
+
+#MeanShift
+from sklearn.cluster import MeanShift
+from sklearn.cluster import estimate_bandwidth
+
+#To find optimize bandwith
+best_bandwidth = estimate_bandwidth(house_location)
+print('Best bandwidth :', round(best_bandwidth,3))
+
+meanshift= MeanShift(bandwidth=best_bandwidth)
+cluster_labels = meanshift.fit_predict(house_location)
+print('cluster labels :',np.unique(cluster_labels))   
+import matplotlib.pyplot as plt
+
+house_location['meanshift_label']  = cluster_labels
+centers = meanshift.cluster_centers_
+unique_labels = np.unique(cluster_labels)
+
