@@ -84,7 +84,8 @@ def preprocessing(X,y,scale_feature,encode_feature, scalers, encoders):
     return cleaned_df
 
 
-df=pd.read_csv("../Dataset/housing.csv")
+#df=pd.read_csv("../Dataset/housing.csv")
+df=pd.read_csv("C:/Users/seoyo/Desktop/2021-2학기/머신러닝/housing.csv")
 
 
 # preprocessing
@@ -93,3 +94,25 @@ X,y,scale_feature,encode_feature = Missingvalue(df)
 X, y,scale_feature,encode_feature, scalers, encoders= Combination_List(X, y,scale_feature,encode_feature)
 
 cleaned_df= preprocessing(X,y,scale_feature,encode_feature,scalers, encoders)
+
+print(cleaned_df.info())
+
+#Clustering
+#DBSCAN
+
+import matplotlib.pyplot as plt
+from sklearn.cluster import DBSCAN
+from sklearn.metrics.cluster import homogeneity_score,completeness_score,v_measure_score
+
+for i in range (1,10,1):
+  dbscan= DBSCAN(eps=i*0.1, min_samples=5)
+  dbscan.fit(cleaned_df)
+  labels = dbscan.labels_
+  n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+  n_noise_ = list(labels).count(-1)
+  print('Estimated number of clusters: %d' % n_clusters_)
+  print('Estimated number of noise points: %d' % n_noise_)
+  print("Homogeneity: %0.3f" % homogeneity_score(y, labels))
+  print("Completeness: %0.3f" % completeness_score(y, labels))
+  print("V-measure: %0.3f" %v_measure_score(y, labels))
+  print("")
