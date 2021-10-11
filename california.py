@@ -6,7 +6,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import MaxAbsScaler
 from sklearn.preprocessing import RobustScaler
-
+from kneed import KneeLocator
+from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import silhouette_score
@@ -112,6 +113,27 @@ house_location = cleaned_df[
      'ocean_proximity_NEAR BAY', 'ocean_proximity_NEAR OCEAN']]
 house_condition = cleaned_df[['housing_median_age', 'total_rooms', 'total_bedrooms']]
 house_around = cleaned_df[['population', 'households', 'median_income']]
+#for calculate distance and get knee point
+def knee_method(X):
+    nearest_neighbors = NearestNeighbors(n_neighbors=11)
+    neighbors = nearest_neighbors.fit(X)
+    distances, indices = neighbors.kneighbors(X)
+    distances = np.sort(distances[:, 10], axis=0)
+    fig = plt.figure(figsize=(5, 5))
+    plt.plot(distances)
+    plt.xlabel("Points")
+    plt.ylabel("Distance")
+    plt.savefig("Distance_curve.png", dpi=300)
+    plt.title("Distance curve")
+    plt.show()
+    i = np.arange(len(distances))
+    knee = KneeLocator(i, distances, S=1, curve='convex', direction='increasing', interp_method='polynomial')
+    fig = plt.figure(figsize=(5, 5))
+    knee.plot_knee()
+    plt.xlabel("Points")
+    plt.ylabel("Distance")
+    plt.show()
+    print(distances[knee.knee])
 
 # function to calculate silhouette score
 def silhouette_score(X, labels):
@@ -153,6 +175,9 @@ def purity_score(target, y_pred):
     contingency_matrix = metrics.cluster.contingency_matrix(target,y_pred)
     return np.sum(np.amax(contingency_matrix, axis=0))/np.sum(contingency_matrix)
 
+#print distance and knee point
+knee_method(house_location)
+
 #variable for store silhouette score of dbscan
 silhouette_dbscan = []
 #variable for store purity score of dbscan
@@ -176,6 +201,7 @@ for i in range(1, 10, 1):
     purity_dbscan.append(purity_sco)
     print("Purity score: %.3f" % purity_sco)
     print("")
+
 
 
 #select best silhouette score of dbscan
