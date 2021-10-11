@@ -62,17 +62,23 @@ def setCombination():
     meanshift = MeanShift()
 
     models = {"kmeans": kmeans, 
+<<<<<<< Updated upstream
             #"gmm": gmm,
             "clarans": [],
             #"dbscan": dbscan, 
             #"meanshift": meanshift
+=======
+            "gmm": gmm,
+            "dbscan": dbscan, 
+            "meanshift": meanshift
+>>>>>>> Stashed changes
             }
 
     #Parameters
     params_dict = {"kmeans": {"n_clusters": [x for x in range (3, 5)]},
                     "gmm": {"n_components": [x for x in range (3, 5)]},
                    "dbscan": {"eps": [0.1,0.5]},
-                   "meanshift": {"bandwidth": []}
+                   "meanshift": {"bandwidth": [1,2]}
                    }
 
     return scalers, encoders, models, params_dict
@@ -140,6 +146,7 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
                 print(f'\n[model: {model_key}]')
                 
                 cv = [(slice(None), slice(None))]
+<<<<<<< Updated upstream
                 if(model_key == 'clarans'):
                     clarans_obj = clarans(scaled_X, 6, 3, 5)
                     clarans_obj.process()
@@ -175,6 +182,25 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
                         best_X = scaled_X
                         best_label = grid.best_estimator_
 
+=======
+                #if(model_key == 'meanshift'):
+                    #grid = GridSearchCV(estimator=model, 
+                    #param_grid=estimate_bandwidth(scaled_X), 
+                    #scoring=silhouette_scorer, 
+                    #cv=cv)
+               # else:
+                grid = GridSearchCV(estimator=model, 
+                    param_grid=params_dict[model_key], 
+                    scoring=silhouette_scorer, 
+                    cv=cv)
+                grid.fit(scaled_X)
+                print(f'best_parameters: {grid.best_params_}')
+                score = grid.best_score_
+                if(best_score < score):
+                    best_score = score
+                    best_X = scaled_X
+                    best_label = grid.best_estimator_
+>>>>>>> Stashed changes
                 # save the 10 highest accuracy and parameters each models
                 list_size = 10
                 list_size -= 1
