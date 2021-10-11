@@ -236,11 +236,3 @@ print("Silhouette score of MeanShift clustering is: %.3f"% silhouette_meanshift)
 #Calculate purity score for meanshift clustering
 purity_meanshift = purity_score(y, cluster_labels)
 print("Purity score of MeanShift clustering is: %.3f"% purity_meanshift)
-
-
-
-
-
-
-
-
