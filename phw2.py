@@ -16,6 +16,7 @@ from sklearn.cluster import DBSCAN
 from sklearn.cluster import MeanShift
 from sklearn.mixture import GaussianMixture
 from sklearn.cluster import estimate_bandwidth
+from pyclustering.cluster.clarans import clarans;
 
 from sklearn.metrics.cluster import homogeneity_score, completeness_score, v_measure_score
 from sklearn import metrics
@@ -56,12 +57,14 @@ def setCombination():
     # Model List
     kmeans = KMeans()
     gmm = GaussianMixture()
+
     dbscan = DBSCAN()
     meanshift = MeanShift()
 
     models = {"kmeans": kmeans, 
-            "gmm": gmm,
-            "dbscan": dbscan, 
+            #"gmm": gmm,
+            "clarans": [],
+            #"dbscan": dbscan, 
             #"meanshift": meanshift
             }
 
@@ -136,25 +139,42 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
             for model_key, model in models.items():
                 print(f'\n[model: {model_key}]')
                 
-                # grid search
                 cv = [(slice(None), slice(None))]
-                if(model_key == 'meanshift'):
-                    grid = GridSearchCV(estimator=model, 
-                    param_grid=estimate_bandwidth(scaled_X), 
-                    scoring=silhouette_scorer, 
-                    cv=cv)
-                else:
-                    grid = GridSearchCV(estimator=model, 
-                        param_grid=params_dict[model_key], 
+                if(model_key == 'clarans'):
+                    clarans_obj = clarans(scaled_X, 6, 3, 5)
+                    clarans_obj.process()
+                    clst = clarans_obj.get_clusters()
+
+                    label =[]
+                    for i in range(len(clst)):
+                        for j in clst[i]:
+                            label.insert(j, i)
+
+                    score = silhouette_score(scaled_X, label, metric='euclidean')
+                    if(best_score < score):
+                        best_score = score
+                        best_X = scaled_X
+                        best_label = label
+                else: # Grid Search
+                    if(model_key == 'meanshift'):
+                        grid = GridSearchCV(estimator=model, 
+                        param_grid=estimate_bandwidth(scaled_X), 
                         scoring=silhouette_scorer, 
                         cv=cv)
-                grid.fit(scaled_X)
-                print(f'best_parameters: {grid.best_params_}')
-                score = grid.best_score_
-                if(best_score < score):
-                    best_score = score
-                    best_X = scaled_X
-                    best_label = grid.best_estimator_
+                    else:
+                        grid = GridSearchCV(estimator=model, 
+                            param_grid=params_dict[model_key], 
+                            scoring=silhouette_scorer, 
+                            cv=cv)
+                    grid.fit(scaled_X)
+                    print(f'best_parameters: {grid.best_params_}')
+                    score = grid.best_score_
+
+                    if(best_score < score):
+                        best_score = score
+                        best_X = scaled_X
+                        best_label = grid.best_estimator_
+
                 # save the 10 highest accuracy and parameters each models
                 list_size = 10
                 list_size -= 1
@@ -216,4 +236,3 @@ for model_name, result_list in best_result.items():
 
 print("[Best Combination]")
 print(best_combi)
-#display_silhouette_plot(best_X, best_label)
