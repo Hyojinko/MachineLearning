@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from matplotlib import cm
 
 from sklearn.preprocessing import StandardScaler
 from sklearn.preprocessing import MinMaxScaler
@@ -9,6 +10,8 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.metrics import silhouette_score
+from sklearn.metrics import silhouette_samples
+
 from sklearn import metrics
 import warnings
 
@@ -113,6 +116,36 @@ house_around = cleaned_df[['population', 'households', 'median_income']]
 # function to calculate silhouette score
 def silhouette_score(X, labels):
     sil_score = metrics.silhouette_score(X,labels,metric='euclidean')
+    n_clusters_ = len(set(labels)) - (1 if -1 in labels else 0)
+    print("For n_clusters =", n_clusters_, "The average silhouette score is :", sil_score)
+    #compute the silhouette scores for each sample
+    sample_silhouette_values = silhouette_samples(X, labels)
+
+    fig,ax1 = plt.subplots()
+    fig.set_size_inches(18,7)
+    ax1.set_xlim([-0.1,1])
+    ax1.set_ylim([0,len(X) + (n_clusters_+1)*10])
+    y_lower = 10
+    for i in range(n_clusters_):
+        ith_cluster_silhouette_values = sample_silhouette_values[labels == i]
+        ith_cluster_silhouette_values.sort()
+        size_cluster_i = ith_cluster_silhouette_values.shape[0]
+        y_upper = y_lower + size_cluster_i
+        color = cm.nipy_spectral(float(i) / n_clusters_)
+        ax1.fill_betweenx(np.arange(y_lower, y_upper),0,ith_cluster_silhouette_values,facecolor = color, edgecolor = color, alpha = 0.7 )
+        ax1.text(-0.05, y_lower + 0.5*size_cluster_i,str(i))
+        y_lower = y_upper + 10
+    ax1.set_title("The silhouette plot for the various clusters")
+    ax1.set_xlabel("The silhouette coefficient values")
+    ax1.set_ylabel("Cluster label")
+
+    ax1.axvline(x=sil_score, color = "red", linestyle='--')
+    ax1.set_yticks([])
+    ax1.set_xticks([-0.1,0,0.2,0.4,0.6,0.8,1])
+
+    plt.suptitle(("Silhouette analysis for clustering on sample data with n_clusters = %d" % n_clusters_),
+                 fontsize=14, fontweight='bold')
+    plt.show()
     return sil_score
 
 
@@ -138,7 +171,6 @@ for i in range(1, 10, 1):
     #calculate each silhouette score and store in silhouette score array
     sil_sco = silhouette_score(house_location, labels)
     silhouette_dbscan.append(sil_sco)
-    print("silhouette_score: %.3f" % sil_sco)
     #calculate each Purity score and store in purity score array
     purity_sco = purity_score(y, labels)
     purity_dbscan.append(purity_sco)
@@ -151,7 +183,7 @@ print("best silhouette score in DBSCAN clustering is %.3f" % np.max(silhouette_d
 
 #select best purity score of dbscan
 print("best purity score in DBSCAN clustering is %.3f" % np.max(purity_dbscan))
-
+print("")
 
 
 # MeanShift
