@@ -125,7 +125,7 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
     best_combination = {}
     best_score = 0
     # Sample Data
-    for index in range(1):
+    for index in range(2):
         X = featureCombination(df, index)
         feature = X.columns.tolist()
         print(f'\n[feature: {feature}]')
