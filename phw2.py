@@ -270,4 +270,4 @@ for model_name, result_list in best_result.items():
 
 print("[Best Combination]")
 print(best_combi)
-display_silhouette_plot(best_X, best_label)
+display_silhouette_plot(best_X, best_label.fit_predict(best_X))
