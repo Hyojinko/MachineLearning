@@ -25,6 +25,9 @@ from sklearn.metrics import silhouette_samples
 
 from sklearn.model_selection import GridSearchCV
 
+from sklearn.neighbors import NearestNeighbors
+from kneed import KneeLocator
+
 import warnings
 warnings.filterwarnings(action='ignore')
 
@@ -83,6 +86,32 @@ def setCombination():
 
     return scalers, encoders, models, params_dict
 
+def knee_method(X):
+    nearest_neighbors = NearestNeighbors(n_neighbors=11)
+    neighbors = nearest_neighbors.fit(X)
+    distances, indices = neighbors.kneighbors(X)
+    distances = np.sort(distances[:, 10], axis=0)
+    fig = plt.figure(figsize=(5, 5))
+    plt.plot(distances)
+    plt.xlabel("Points")
+    plt.ylabel("Distance")
+    plt.savefig("Distance_curve.png", dpi=300)
+    plt.title("Distance curve")
+    plt.show()
+    i = np.arange(len(distances))
+    knee = KneeLocator(i, distances, S=1, curve='convex', direction='increasing', interp_method='polynomial')
+    fig = plt.figure(figsize=(5, 5))
+    knee.plot_knee()
+    plt.xlabel("Points")
+    plt.ylabel("Distance")
+    plt.show()
+    print(distances[knee.knee])
+    
+def purity_scorer(target, y_pred):
+    contingency_matrix = metrics.cluster.contingency_matrix(target, y_pred)
+    score = np.sum(np.amax(contingency_matrix,axis=0))/np.sum(contingency_matrix)
+
+    
 def silhouette_scorer(estimator, X):
     labels = estimator.fit_predict(X)
     score = silhouette_score(X, labels, metric='euclidean')
@@ -141,6 +170,7 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
         # find the best parameter by using grid search
         for scaler_key, scaler in scalers.items():
             scaled_X = scaler.fit_transform(X)
+            knee_method(scaled_X)
             print(f'\n[scaler: {scaler_key}]')
             for model_key, model in models.items():
                 print(f'\n[model: {model_key}]')
@@ -262,3 +292,4 @@ for model_name, result_list in best_result.items():
 
 print("[Best Combination]")
 print(best_combi)
+display_silhouette_plot(best_X, best_label)
