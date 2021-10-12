@@ -9,7 +9,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.preprocessing import MaxAbsScaler
 
 from sklearn.preprocessing import LabelEncoder
-from sklearn.preprocessing import OneHotEncoder
+
 
 from sklearn.cluster import KMeans
 from sklearn.cluster import DBSCAN
@@ -39,10 +39,7 @@ def findMissingValue(df):
     # only 'totla_bedrooms' has missing values, fill median
     df.total_bedrooms.fillna(df.total_bedrooms.median(), inplace=True)
 
-    num_cols = df.select_dtypes(include=['int64', 'float64']).columns.to_list()  # numerical value
-    cat_cols = df.select_dtypes(include=['object']).columns.to_list()  # categorical value
-
-    return df, num_cols, cat_cols
+    return df
 
 
 # function for set hyper parameters and run find_best
@@ -56,8 +53,7 @@ def setCombination():
 
     # Encoder List
     label = LabelEncoder()
-    oneHot = OneHotEncoder()
-    encoders = {"label encoder": label, "one-hot encoder": oneHot}
+    encoders = {"label encoder": label}
 
     # Model List
     kmeans = KMeans()
@@ -155,9 +151,24 @@ def display_silhouette_plot(X, labels):
 
 def featureCombination(df, index):
     if index == 0:
-        feature = df[['housing_median_age', 'total_rooms', 'total_bedrooms']]
+        feature = df[['population', 'ocean_proximity']]
     elif index == 1:
         feature = df[['population', 'households', 'median_income']]
+    elif index == 1:
+        feature = df[['housing_median_age', 'total_rooms', 'total_bedrooms']]
+    elif index == 2:
+        feature = df[['population', 'households']]
+    elif index == 3:
+        feature = df[['population', 'median_income']]
+    elif index == 4:
+        feature = df[['households', 'median_income']]
+    elif index == 5:
+        feature = df[['total_rooms', 'total_bedrooms']]
+    elif index == 6:
+        feature = df[['median_income', 'ocean_proximity']]
+    elif index == 7:
+        feature = df[['median_income', 'total_rooms']]
+    return feature
     return feature
 
 
@@ -166,15 +177,28 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
     best_combination = {}
     best_score = 0
     # Sample Data
-    for index in range(1):
+    for index in range(8):
         X = featureCombination(df, index)
         feature = X.columns.tolist()
         print(f'\n[feature: {feature}]')
+
+        num_cols = X.select_dtypes(include=['int64', 'float64']).columns.to_list()     # numerical value
+        cat_cols = X.select_dtypes(include=['object']).columns.to_list()               # categorical value
         # find the best parameter by using grid search
         for scaler_key, scaler in scalers.items():
-            scaled_X = scaler.fit_transform(X)
-            knee_method(scaled_X)
+            scaled_X = scaler.fit_transform(X[num_cols])
             print(f'\n[scaler: {scaler_key}]')
+            #Label encoding if there is categorical feature
+            if 'ocean_proximity' in X.columns :
+                label=LabelEncoder()            
+                encoded_X=label.fit_transform(X[cat_cols])               
+                encoded_X=encoded_X.reshape(-1,1)              
+                # add encoded_x to scaled_x
+                scaled_X=np.concatenate((scaled_X, encoded_X), axis=1)
+            print(f'[encoder: label encoder]\n')
+            #print(scaled_X)
+            knee_method(scaled_X)
+           
             for model_key, model in models.items():
                 print(f'\n[model: {model_key}]')
 
@@ -258,7 +282,7 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
 df = pd.read_csv("housing.csv")
 
 # preprocessing
-df, scale_feature, encode_feature = findMissingValue(df)
+df = findMissingValue(df)
 
 # set scalers, models, params, k values
 scalers, encoders, models, params_dict = setCombination()
