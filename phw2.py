@@ -187,7 +187,6 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
                     for i in range(len(clst)):
                         for j in clst[i]:
                             label.insert(j, i)
-                    score = silhouette_score(scaled_X, label, metric='euclidean')
                     if (best_score < score):
                         best_score = score
                         best_X = scaled_X
