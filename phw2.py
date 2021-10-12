@@ -67,10 +67,10 @@ def setCombination():
     meanshift = MeanShift()
 
     models = {"kmeans": kmeans,
-              "clarans": [],
+              #"clarans": [],
               "gmm": gmm,
               "dbscan": dbscan,
-              "meanshift": meanshift
+              #"meanshift": meanshift
 
     }
 
@@ -166,7 +166,7 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
     best_combination = {}
     best_score = 0
     # Sample Data
-    for index in range(2):
+    for index in range(1):
         X = featureCombination(df, index)
         feature = X.columns.tolist()
         print(f'\n[feature: {feature}]')
@@ -192,6 +192,14 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
                         best_score = score
                         best_X = scaled_X
                         best_label = label
+
+                    target_dict = {'silhouette': score,
+                                        'scaler': scaler_key,
+                                        'model': model_key,
+                                        'param': {'n_cluster':6,'local minima':3},
+                                        'feature': feature
+                                        }
+
                 else:  # Grid Search
                     if (model_key == 'meanshift'):
                         grid = GridSearchCV(estimator=model,
@@ -204,46 +212,47 @@ def findBestCombination(df, scalers, encoders, models, params_dict):
                                             scoring=silhouette_scorer,
                                             cv=cv)
                         grid.fit(scaled_X)
-                        print(f'best_parameters: {grid.best_params_}')
-                        score = grid.best_score_
-                        if (best_score < score):
-                            best_score = score
-                            best_X = scaled_X
-                            best_label = grid.best_estimator_
-                            # save the 10 highest accuracy and parameters each models
-                            list_size = 10
-                            list_size -= 1
-                            flag = False
+                    print(f'best_parameters: {grid.best_params_}')
+                    score = grid.best_score_
+                    if (best_score < score):
+                        best_score = score
+                        best_X = scaled_X
+                        best_label = grid.best_estimator_
+                        
 
-                            target_dict = {'silhouette': score,
-                                           'scaler': scaler_key,
-                                           'model': model_key,
-                                           'param': grid.best_params_,
-                                           'feature': feature
-                                           }
+                        target_dict = {'silhouette': score,
+                                        'scaler': scaler_key,
+                                        'model': model_key,
+                                        'param': grid.best_params_, 
+                                        'feature': feature
+                                        }
+                
+                list_size = 10
+                list_size -= 1
+                flag = False
 
-                            # save accuracy
-                            if model_key not in best_combination.keys():
-                                best_combination[model_key] = []
-                            if len(best_combination[model_key]) <= list_size:
-                                best_combination[model_key].append(target_dict)
+                # save accuracy
+                if model_key not in best_combination.keys():
+                    best_combination[model_key] = []
+                if len(best_combination[model_key]) <= list_size:
+                    best_combination[model_key].append(target_dict)
 
-                            # insert accuracy
-                            elif best_combination[model_key][-1]['silhouette'] < score:
-                                for i in range(1, list_size):
-                                    if best_combination[model_key][list_size - 1 - i]['silhouette'] > score:
-                                        best_combination[model_key].insert(list_size - i, target_dict)
-                                        best_combination[model_key].pop()
-                                        flag = True
-                                        break
-                                if flag is False:
-                                    best_combination[model_key].insert(0, target_dict)
-                                    best_combination[model_key].pop()
+                # insert accuracy
+                elif best_combination[model_key][-1]['silhouette'] < score:
+                    for i in range(1, list_size):
+                        if best_combination[model_key][list_size - 1 - i]['silhouette'] > score:
+                            best_combination[model_key].insert(list_size - i, target_dict)
+                            best_combination[model_key].pop()
+                            flag = True
+                            break
+                    if flag is False:
+                        best_combination[model_key].insert(0, target_dict)
+                        best_combination[model_key].pop()
 
-                            print(f'silhouette score: {score}', end='')
-                    print()
+                    print(f'silhouette score: {score}', end='')
+                print()
 
-                    return best_combination, best_X, best_label
+    return best_combination, best_X, best_label
 
 # read data
 df = pd.read_csv("housing.csv")
